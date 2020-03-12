@@ -8,7 +8,7 @@ from _crypto import command_set_token, command_change_password
 def command_list_operations(**kwargs):
     cipher = prompt_cipher()
     client = InvestClient(decode_token(cipher, enc_token))
-    client.list_operations(**kwargs)
+    client.list_operations("2020-03-01", "2020-04-01", group=False)
 
 
 def get_parser():

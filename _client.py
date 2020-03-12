@@ -20,60 +20,52 @@ class InvestClient(requests.Session):
             "accept": "application/json",
             "Authorization": "Bearer " + token,
         })
-        self._figi_store = {}
+        self._figi_cache = {}
 
     def request(self, method, url, *args, **kwargs):
         url = urljoin(self.api_base or '', url)
         kwargs.setdefault('timeout', self.default_timeout)
         return super().request(method, url, *args, **kwargs)
 
-    def get_figi(self, figi):
-        if figi not in self._figi_store:
-            val = self.get(
-                "market/search/by-figi", data={"figi": figi}
-            ).json()['payload']
-            if val['ticker'] in self.known_tickers:
-                val['ticker'] = self.known_tickers[val['ticker']]
-            self._figi_store[figi] = val
-        return self._figi_store[figi]
-
-    def search_last_usd_sell(self, date_to):
-        date_from = "2020-02-01"
+    def operations(self, date_from, date_to=None, figi=None):
         res = self.get(
             "operations",
-            data={
-                "from": date_from + "T00:00:00+00:00",
-                "to": date_to + "T00:00:00+00:00",
-                "figi": self.known_figis["USD"],
+            params={
+                "from": date_from + "T09:00:00+03:00",
+                "to": date_to + "T09:00:00+03:00",
+                "figi": figi,
             },
         )
         if res.status_code != 200:
             print(res.status_code, res.text)
-            return
+            raise ValueError("Can't get operations list")
 
-        operations = res.json()['payload']['operations']
+        return res.json()['payload']['operations']
+
+    def search_by_figi(self, figi):
+        if figi not in self._figi_cache:
+            val = self.get(
+                "market/search/by-figi", params={"figi": figi}
+            ).json()['payload']
+            if val['ticker'] in self.known_tickers:
+                val['ticker'] = self.known_tickers[val['ticker']]
+            self._figi_cache[figi] = val
+        return self._figi_cache[figi]
+
+    def search_last_usd_sell(self, date_to):
+        date_from = "2020-01-01"
+        operations = self.operations(
+            date_from, date_to, self.known_figis["USD"])
         for op in operations:
             if op["operationType"] == "Sell":
                 return op
 
-    def list_operations(self):
-        date_from = "2020-03-01"
-        date_to = "2021-04-01"
-        res = self.get(
-            "operations",
-            data={
-                "from": date_from + "T00:00:00+00:00",
-                "to": date_to + "T00:00:00+00:00",
-            },
-        )
-        if res.status_code != 200:
-            print(res.status_code, res.text)
-            return
-
-        operations = res.json()['payload']['operations']
+    def list_operations(self, date_from, date_to, group=False):
+        operations = self.operations(date_from, date_to)
 
         line = "\t".join
         last_usd_sell = None
+        groups = {}
 
         print(line(["Ticker", "Name", "Date", "Quantity", "Sum",
                     "Currency", "Sum (USD)"]))
@@ -87,11 +79,11 @@ class InvestClient(requests.Session):
 
             ticker, name, date, quantity, summ, currency = (
                 '', op["operationType"], op['date'].split('T')[0],
-                '', op['payment'], op['currency'])
+                0, op['payment'], op['currency'])
 
             if name in ("Buy", "BuyCard", "Sell"):
-                figi = self.get_figi(op['figi'])
-                quantity = str(op['quantity'] * (-1 if name == 'Sell' else 1))
+                figi = self.search_by_figi(op['figi'])
+                quantity = op['quantity'] * (-1 if name == 'Sell' else 1)
                 ticker = figi['ticker']
                 name = figi['name']
 
@@ -99,11 +91,11 @@ class InvestClient(requests.Session):
                     last_usd_sell = op
             
             elif name in ("BrokerCommission",):
-                figi = self.get_figi(op['figi'])
+                figi = self.search_by_figi(op['figi'])
                 ticker = figi['ticker']            
 
             elif name in ("Dividend", "TaxDividend"):
-                figi = self.get_figi(op['figi'])
+                figi = self.search_by_figi(op['figi'])
                 ticker = figi['ticker']
                 name = figi['name'] + f" ({op['operationType']})"
 
@@ -122,5 +114,19 @@ class InvestClient(requests.Session):
                 if last_usd_sell is None:
                     last_usd_sell = self.search_last_usd_sell(date_from)
                 summ_usd = round(summ / last_usd_sell['price'], 2)
-            print(line([ticker, name, date, quantity,
-                        str(summ), currency, str(summ_usd)]))
+
+            if group:
+                params = groups.setdefault((ticker, name, currency),
+                                           [date, 0, 0, 0])
+                params[1] += quantity
+                params[2] += summ
+                params[3] += summ_usd
+            else:
+                print(line([ticker, name, date, str(quantity),
+                            f"{summ:0.2f}", currency, f"{summ_usd:0.2f}"]))
+        
+        if group:
+            for ((ticker, name, currency),
+                 (date, quantity, summ, summ_usd)) in groups.items():
+                print(line([ticker, name, date, str(quantity),
+                            f"{summ:0.2f}", currency, f"{summ_usd:0.2f}"]))
