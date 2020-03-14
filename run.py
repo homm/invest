@@ -1,22 +1,31 @@
 import argparse
+from datetime import datetime
 
 from _client import InvestClient
 from _crypto import prompt_cipher, decode_token, enc_token
 from _crypto import command_set_token, command_change_password
 
 
-def command_list_operations(**kwargs):
+def command_list_operations(date_from, date_to, group):
     cipher = prompt_cipher()
     client = InvestClient(decode_token(cipher, enc_token))
-    client.list_operations("2020-03-01", "2020-04-01", group=False)
+    client.list_operations(date_from, date_to, group=group)
 
 
 def get_parser():
+    def parse_date(date):
+        return datetime.strptime(date, "%Y-%m-%d").date()
+
     parser = argparse.ArgumentParser()
     subparsers = parser.add_subparsers(dest="command", required=True)
     
     subparser = subparsers.add_parser('list')
     subparser.set_defaults(command=command_list_operations)
+    subparser.add_argument('--from', type=parse_date, dest='date_from',
+                           required=True)
+    subparser.add_argument('--to', type=parse_date, dest='date_to',
+                           default=datetime.now().date())
+    subparser.add_argument('--group', action='store_true')
 
     subparser = subparsers.add_parser('set_token')
     subparser.set_defaults(command=command_set_token)

@@ -1,4 +1,5 @@
 import json
+from datetime import timedelta
 from urllib.parse import urljoin
 
 import requests
@@ -31,8 +32,8 @@ class InvestClient(requests.Session):
         res = self.get(
             "operations",
             params={
-                "from": date_from + "T09:00:00+03:00",
-                "to": date_to + "T09:00:00+03:00",
+                "from": date_from.strftime('%Y-%m-%d') + "T09:00:00+03:00",
+                "to": date_to.strftime('%Y-%m-%d') + "T09:00:00+03:00",
                 "figi": figi,
             },
         )
@@ -53,7 +54,7 @@ class InvestClient(requests.Session):
         return self._figi_cache[figi]
 
     def search_last_usd_sell(self, date_to):
-        date_from = "2020-01-01"
+        date_from = date_to - timedelta(days=60)
         operations = self.operations(
             date_from, date_to, self.known_figis["USD"])
         for op in operations:
