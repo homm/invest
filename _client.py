@@ -64,12 +64,11 @@ class InvestClient(requests.Session):
     def list_operations(self, date_from, date_to, group=False):
         operations = self.operations(date_from, date_to)
 
-        line = "\t".join
         last_usd_sell = None
         groups = {}
 
-        print(line(["Ticker", "Name", "Date", "Quantity", "Sum",
-                    "Currency", "Sum (USD)"]))
+        print("\t".join(["Ticker", "Name", "Date", "Quantity", "Sum",
+                         "Currency", "Sum (USD)"]))
 
         for op in reversed(operations):
             if op['status'] == "Decline":
@@ -123,11 +122,20 @@ class InvestClient(requests.Session):
                 params[2] += summ
                 params[3] += summ_usd
             else:
-                print(line([ticker, name, date, str(quantity),
-                            f"{summ:0.2f}", currency, f"{summ_usd:0.2f}"]))
+                self._echo_line(ticker, name, date, quantity, summ,
+                                currency, summ_usd)
         
         if group:
             for ((ticker, name, currency),
                  (date, quantity, summ, summ_usd)) in groups.items():
-                print(line([ticker, name, date, str(quantity),
-                            f"{summ:0.2f}", currency, f"{summ_usd:0.2f}"]))
+                self._echo_line(ticker, name, date, quantity, summ,
+                                currency, summ_usd)
+
+    @staticmethod
+    def _echo_line(ticker, name, date, quantity, summ, currency, summ_usd):
+        if not quantity:
+            quantity = ''
+        print("\t".join([
+            ticker, name, date, str(quantity),
+            f"{summ:0.2f}", currency, f"{summ_usd:0.2f}"
+        ]))
