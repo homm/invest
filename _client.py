@@ -53,12 +53,13 @@ class InvestClient(requests.Session):
             self._figi_cache[figi] = val
         return self._figi_cache[figi]
 
-    def search_last_usd_sell(self, date_to):
+    def search_last_op(self, date_to, op_type='Sell', figi=None):
         date_from = date_to - timedelta(days=60)
-        operations = self.operations(
-            date_from, date_to, self.known_figis["USD"])
+        if not isinstance(op_type, (list, tuple)):
+            op_type = (op_type,)
+        operations = self.operations(date_from, date_to, figi=figi)
         for op in operations:
-            if op["operationType"] == "Sell":
+            if op["operationType"] in op_type:
                 return op
 
     def list_operations(self, date_from, date_to, group=False):
@@ -112,7 +113,8 @@ class InvestClient(requests.Session):
             summ_usd = summ
             if currency == 'RUB':
                 if last_usd_sell is None:
-                    last_usd_sell = self.search_last_usd_sell(date_from)
+                    last_usd_sell = self.search_last_op(
+                        date_from, figi=self.known_figis["USD"])
                 summ_usd = round(summ / last_usd_sell['price'], 2)
 
             if group:
