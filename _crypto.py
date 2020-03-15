@@ -25,6 +25,37 @@ def decode_token(cipher, enc_token):
     return token.decode('utf-8')
 
 
+def is_password_weak(password, min_length=12):
+    if len(password) < min_length:
+        return True, "password is too short"
+    if not password.isprintable():
+        return True, "not all chars are printable"
+    if not password.isascii():
+        return True, "not ascii chars"
+    if password.islower():
+        return True, "all chars are lower"
+    if password.isupper():
+        return True, "all chars are upper"
+    if password.isdigit():
+        return True, "all chars are digits"
+    return False, None
+
+
+def prompt_new_password():
+    while True:
+        while True:
+            password = getpass('New password: ')
+            weak, reason = is_password_weak(password)
+            if not weak:
+                break
+            print(f'Password is too weak: {reason}')
+
+        if password == getpass('Repeat password: '):
+            break
+        print("Passwords don't match.")
+    return password
+
+
 def limit_str_repr(var, line_width=79):
     end = 0
     while end <= len(var):
@@ -53,25 +84,19 @@ enc_token = (
 
 
 def command_set_token():
-    pass1 = getpass('New password: ')
-    pass2 = getpass('Repeat password: ')
-    if pass1 != pass2:
-        raise ValueError("Passwords don't match.")
+    password = prompt_new_password()
 
     print("Now please paste the token once.")
     print("Do not store it anywhere else.")
     token = getpass('Paste token: ')
 
-    output_conf(pass1, token)
+    output_conf(password, token)
 
 
 def command_change_password():
     old_cipher = prompt_cipher()
     token = decode_token(old_cipher, enc_token)
 
-    pass1 = getpass('New password: ')
-    pass2 = getpass('Repeat password: ')
-    if pass1 != pass2:
-        raise ValueError("Passwords don't match.")
+    password = prompt_new_password()
 
-    output_conf(pass1, token)
+    output_conf(password, token)

@@ -53,8 +53,8 @@ class InvestClient(requests.Session):
             self._figi_cache[figi] = val
         return self._figi_cache[figi]
 
-    def search_last_op(self, date_to, op_type='Sell', figi=None):
-        date_from = date_to - timedelta(days=60)
+    def search_last_op(self, date_to, days_back=60, op_type='Sell', figi=None):
+        date_from = date_to - timedelta(days=days_back)
         if not isinstance(op_type, (list, tuple)):
             op_type = (op_type,)
         operations = self.operations(date_from, date_to, figi=figi)
