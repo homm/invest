@@ -1,5 +1,5 @@
 import argparse
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from _client import InvestClient
 from _crypto import prompt_cipher, decode_token, enc_token
@@ -16,6 +16,8 @@ def get_parser():
     def parse_date(date):
         return datetime.strptime(date, "%Y-%m-%d").date()
 
+    next_day = (datetime.now() + timedelta(days=1)).date()
+
     parser = argparse.ArgumentParser()
     subparsers = parser.add_subparsers(dest="command", required=True)
     
@@ -24,7 +26,7 @@ def get_parser():
     subparser.add_argument('--from', type=parse_date, dest='date_from',
                            required=True)
     subparser.add_argument('--to', type=parse_date, dest='date_to',
-                           default=datetime.now().date())
+                           default=next_day)
     subparser.add_argument('--group', action='store_true')
 
     subparser = subparsers.add_parser('set_token')
