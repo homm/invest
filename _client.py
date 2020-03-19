@@ -95,7 +95,7 @@ class InvestClient(requests.Session):
                 figi = self.search_by_figi(op['figi'])
                 ticker = figi['ticker']            
 
-            elif name in ("Dividend", "TaxDividend"):
+            elif name in ("Dividend", "TaxDividend", "Coupon"):
                 figi = self.search_by_figi(op['figi'])
                 ticker = figi['ticker']
                 name = figi['name'] + f" ({op['operationType']})"
