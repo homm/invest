@@ -1,6 +1,6 @@
 from parameterized import parameterized
 
-from _crypto import is_password_weak
+from .crypto import is_password_weak
 
 
 @parameterized([

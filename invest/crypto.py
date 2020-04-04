@@ -4,7 +4,7 @@ from getpass import getpass
 from Crypto.Cipher import Salsa20
 from Crypto.Hash import SHA256
 
-from _conf import CONF_PROLOGUE, enc_token_nonce, enc_token
+from .conf import CONF_PROLOGUE, enc_token_nonce, enc_token
 
 
 def get_cipher(password, nonce=enc_token_nonce):
