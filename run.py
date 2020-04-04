@@ -4,7 +4,7 @@ import argparse
 from datetime import datetime, timedelta
 
 from invest import commands
-from invest.crypto import command_set_token, command_change_password, enc_token
+from invest.conf import enc_token
 
 
 def get_parser():
@@ -29,17 +29,17 @@ def get_parser():
     subparser.add_argument('tickers', nargs='*')
 
     subparser = subparsers.add_parser('set_token')
-    subparser.set_defaults(command=command_set_token)
+    subparser.set_defaults(command=commands.set_token)
 
     subparser = subparsers.add_parser('change_password')
-    subparser.set_defaults(command=command_change_password)
+    subparser.set_defaults(command=commands.change_password)
 
     return parser
 
 
 if __name__ == '__main__':
     if enc_token is None:
-        command_set_token()
+        commands.set_token()
     else:
         args = vars(get_parser().parse_args())
         args.pop('command')(**args)

@@ -4,7 +4,7 @@ from getpass import getpass
 from Crypto.Cipher import Salsa20
 from Crypto.Hash import SHA256
 
-from .conf import CONF_PROLOGUE, enc_token_nonce, enc_token
+from .conf import CONF_PROLOGUE, enc_token_nonce
 
 
 def get_cipher(password, nonce=enc_token_nonce):
@@ -78,22 +78,3 @@ enc_token = (
     {line.join(limit_str_repr(new_enc_token, 79 - 4))}
 )
 """, file=sys.stderr)
-
-
-def command_set_token():
-    password = prompt_new_password()
-
-    print("Now please paste the token once.", file=sys.stderr)
-    print("Do not store it anywhere else.", file=sys.stderr)
-    token = getpass('Paste token: ')
-
-    output_conf(password, token)
-
-
-def command_change_password():
-    old_cipher = prompt_cipher()
-    token = decode_token(old_cipher, enc_token)
-
-    password = prompt_new_password()
-
-    output_conf(password, token)
