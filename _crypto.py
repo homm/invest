@@ -1,12 +1,10 @@
+import sys
 from getpass import getpass
 
 from Crypto.Cipher import Salsa20
 from Crypto.Hash import SHA256
 
-try:
-    from conf import enc_token_nonce, enc_token
-except ImportError:
-    enc_token_nonce = enc_token = None
+from _conf import CONF_PROLOGUE, enc_token_nonce, enc_token
 
 
 def get_cipher(password, nonce=enc_token_nonce):
@@ -48,11 +46,11 @@ def prompt_new_password():
             weak, reason = is_password_weak(password)
             if not weak:
                 break
-            print(f'Password is too weak: {reason}')
+            print(f'Password is too weak: {reason}', file=sys.stderr)
 
         if password == getpass('Repeat password: '):
             break
-        print("Passwords don't match.")
+        print("Passwords don't match.", file=sys.stderr)
     return password
 
 
@@ -74,20 +72,19 @@ def output_conf(password, token):
 
     line = "\n    "
     print(f"""
-Put this code to the `conf.py` file:
-# ------------- conf.py ------------
+{CONF_PROLOGUE}
 enc_token_nonce = {repr(new_cipher.nonce)}
 enc_token = (
     {line.join(limit_str_repr(new_enc_token, 79 - 4))}
 )
-""")
+""", file=sys.stderr)
 
 
 def command_set_token():
     password = prompt_new_password()
 
-    print("Now please paste the token once.")
-    print("Do not store it anywhere else.")
+    print("Now please paste the token once.", file=sys.stderr)
+    print("Do not store it anywhere else.", file=sys.stderr)
     token = getpass('Paste token: ')
 
     output_conf(password, token)
