@@ -1,5 +1,6 @@
+import sys
 import json
-from datetime import timedelta
+from datetime import datetime, timedelta
 from urllib.parse import urljoin
 
 import requests
@@ -22,6 +23,7 @@ class InvestClient(requests.Session):
             "Authorization": "Bearer " + token,
         })
         self._figi_cache = {}
+        self._ticker_cache = {}
 
     def request(self, method, url, *args, **kwargs):
         url = urljoin(self.api_base or '', url)
@@ -32,13 +34,13 @@ class InvestClient(requests.Session):
         res = self.get(
             "operations",
             params={
+                "figi": figi,
                 "from": date_from.strftime('%Y-%m-%d') + "T09:00:00+03:00",
                 "to": date_to.strftime('%Y-%m-%d') + "T09:00:00+03:00",
-                "figi": figi,
             },
         )
         if res.status_code != 200:
-            print(res.status_code, res.text)
+            print(res.status_code, res.text, file=sys.stderr)
             raise ValueError("Can't get operations list")
 
         return res.json()['payload']['operations']
@@ -52,6 +54,42 @@ class InvestClient(requests.Session):
                 val['ticker'] = self.known_tickers[val['ticker']]
             self._figi_cache[figi] = val
         return self._figi_cache[figi]
+
+    def search_by_ticker(self, ticker):
+        if ticker not in self._ticker_cache:
+            res = self.get('market/search/by-ticker', params={'ticker': ticker})
+            if res.status_code != 200:
+                print(res.status_code, res.text, file=sys.stderr)
+                raise ValueError("Can't get info for the ticker " + ticker)
+            payload = res.json()['payload']
+            if payload['total'] == 0:
+                raise ValueError("Can't get info for the ticker " + ticker)
+            if payload['total'] > 1:
+                print(payload['instruments'], file=sys.stderr)
+                raise ValueError(
+                    "Multiple instruments returned for the ticker " + ticker)
+            self._ticker_cache[ticker] = payload['instruments'][0]
+        return self._ticker_cache[ticker]
+
+    def search_price_on_date(self, figi, date_to, interval='day'):
+        date_from = date_to - timedelta(days=10)
+        res = self.get(
+            'market/candles',
+            params={
+                'figi': figi,
+                'interval': interval,
+                "from": date_from.strftime('%Y-%m-%d') + "T00:00:00+03:00",
+                "to": date_to.strftime('%Y-%m-%d') + "T23:59:59+03:00",
+            },
+        )
+        if res.status_code != 200:
+            print(res.status_code, res.text, file=sys.stderr)
+            raise ValueError("Can't find last price for figi " + figi)
+        candles = res.json()['payload']['candles']
+        for candle in candles:
+            candle.pop('interval', None)
+            candle.pop('figi', None)
+        return candles[-1]
 
     def search_last_op(self, date_to, days_back=60, op_type='Sell', figi=None):
         date_from = date_to - timedelta(days=days_back)
@@ -141,3 +179,15 @@ class InvestClient(requests.Session):
             ticker, name, date, str(quantity),
             f"{summ:0.2f}", currency, f"{summ_usd:0.2f}"
         ]))
+
+    def tickers_rates(self, tickers, date_to=None):
+        if date_to is None:
+            date_to = (datetime.now() + timedelta(days=1)).date()
+        print("\t".join(["Ticker", "Name", "Date", "Sum", "Currency"]))
+        for ticker in tickers:
+            figi = self.search_by_ticker(ticker)
+            price = self.search_price_on_date(figi['figi'], date_to)
+            print("\t".join([
+                figi['ticker'], figi['name'], price['time'].split('T')[0],
+                f"{price['c']:0.2f}", figi['currency']
+            ]))

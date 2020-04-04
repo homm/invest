@@ -28,9 +28,13 @@ def change_password():
     output_conf(password, token)
 
 
-def operations_log(date_from, date_to, group):
+def _get_client():
     cipher = prompt_cipher()
-    client = InvestClient(decode_token(cipher, enc_token))
+    return InvestClient(decode_token(cipher, enc_token))
+
+
+def operations_log(date_from, date_to, group):
+    client = _get_client()
     client.list_operations(date_from, date_to, group=group)
 
 
@@ -46,4 +50,6 @@ default_tickers = "{' '.join(tickers)}"
 """,
             file=sys.stderr
         )
-    print('>>> show tickers', tickers)
+
+    client = _get_client()
+    client.tickers_rates(tickers)
