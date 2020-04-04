@@ -53,3 +53,8 @@ default_tickers = "{' '.join(tickers)}"
 
     client = _get_client()
     client.tickers_rates(tickers)
+
+
+def portfolio():
+    client = _get_client()
+    client.portfolio()

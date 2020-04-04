@@ -191,3 +191,20 @@ class InvestClient(requests.Session):
                 figi['ticker'], figi['name'], price['time'].split('T')[0],
                 f"{price['c']:0.2f}", figi['currency']
             ]))
+
+    def portfolio(self):
+        res = self.get('portfolio')
+        if res.status_code != 200:
+            print(res.status_code, res.text, file=sys.stderr)
+            raise ValueError("Can't get portfolio")
+        positions = res.json()['payload']['positions']
+        
+        print("\t".join(["Ticker", "Name", "Quantity", "Sum", "Currency"]))
+        for pos in positions:
+            ticker = self.known_tickers.get(pos['ticker'], pos['ticker'])
+            price = pos['averagePositionPrice']['value']
+            price += pos['expectedYield']['value'] / pos['balance']
+            print("\t".join([
+                ticker, pos['name'], str(int(pos['balance'])),
+                f"{price:0.2f}", pos['expectedYield']['currency']
+            ]))

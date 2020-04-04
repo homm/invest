@@ -9,6 +9,7 @@ from invest.conf import enc_token
 
 def get_parser():
     def parse_date(date):
+        date = date.replace('.', '-')
         return datetime.strptime(date, "%Y-%m-%d").date()
 
     next_day = (datetime.now() + timedelta(days=1)).date()
@@ -27,6 +28,9 @@ def get_parser():
     subparser = subparsers.add_parser('rates')
     subparser.set_defaults(command=commands.current_rates)
     subparser.add_argument('tickers', nargs='*')
+
+    subparser = subparsers.add_parser('portfolio')
+    subparser.set_defaults(command=commands.portfolio)
 
     subparser = subparsers.add_parser('set_token')
     subparser.set_defaults(command=commands.set_token)
