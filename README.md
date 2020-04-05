@@ -13,7 +13,7 @@
 в шапке приложения показывается стоимость моего текущего портфеля и изменение
 его стоимости.
 
-![tinkoff application header](./static/app_header.png)
+<img alt="tinkoff application header" src="./static/app_header.png" width="375"/>
 
 
 
