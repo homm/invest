@@ -40,6 +40,10 @@ def is_password_weak(password, min_length=12):
 
 
 def prompt_new_password():
+    print("Password should be at least 12 ASCII chars length.\n"
+          "It can't consist of digits only. "
+          "At least one char in UPPER and lower case is required.",
+          file=sys.stderr)
     while True:
         while True:
             password = getpass('New password: ')

@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import sys
 import argparse
 from datetime import datetime, timedelta
 
@@ -43,6 +44,10 @@ def get_parser():
 
 if __name__ == '__main__':
     if enc_token is None:
+        print("Seems like this is the first run. "
+              "Please fill the credentials to continue. "
+              "At first, you need to choose a password.\n",
+              file=sys.stderr)
         commands.set_token()
     else:
         args = vars(get_parser().parse_args())
