@@ -199,7 +199,7 @@ class InvestClient(requests.Session):
             raise ValueError("Can't get portfolio")
         positions = res.json()['payload']['positions']
         
-        print("\t".join(["Ticker", "Name", "Quantity", "Sum", "Currency"]))
+        print("\t".join(["Ticker", "Name", "Quantity", "Price", "Currency"]))
         for pos in positions:
             ticker = self.known_tickers.get(pos['ticker'], pos['ticker'])
             price = pos['averagePositionPrice']['value']
