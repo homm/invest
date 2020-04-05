@@ -14,6 +14,7 @@ def get_cipher(password, nonce=enc_token_nonce):
 
 def prompt_cipher():
     password = getpass('Password: ')
+    print("", file=sys.stderr)
     return get_cipher(password)
 
 
@@ -40,7 +41,7 @@ def is_password_weak(password, min_length=12):
 
 
 def prompt_new_password():
-    print("Password should be at least 12 ASCII chars length.\n"
+    print("New password should be at least 12 ASCII chars length.\n"
           "It can't consist of digits only. "
           "At least one char in UPPER and lower case is required.",
           file=sys.stderr)
@@ -55,6 +56,7 @@ def prompt_new_password():
         if password == getpass('Repeat password: '):
             break
         print("Passwords don't match.", file=sys.stderr)
+    print("", file=sys.stderr)
     return password
 
 

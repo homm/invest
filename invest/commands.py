@@ -10,11 +10,12 @@ from .crypto import (decode_token, output_conf, prompt_cipher,
 def set_token():
     password = prompt_new_password()
 
-    print("""
-Now please paste the token once.
-Do not store it anywhere else.
-""", file=sys.stderr)
+    print(
+        "Now please paste the token once. \nDo not store it anywhere else.",
+        file=sys.stderr
+    )
     token = getpass('Paste token: ')
+    print("", file=sys.stderr)
 
     output_conf(password, token)
 
