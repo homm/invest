@@ -44,7 +44,8 @@ def current_rates(tickers):
             sys.exit(f'usage: {sys.argv[0]} rates [tickers [tickers ...]]')
         tickers = default_tickers 
     else:
-        print(f"""
+        print(
+            f"""
 {CONF_PROLOGUE}
 default_tickers = "{' '.join(tickers)}"
 """,

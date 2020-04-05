@@ -75,10 +75,10 @@ def output_conf(password, token):
     new_enc_token = new_cipher.encrypt(token.encode('utf-8'))
 
     line = "\n    "
-    print(f"""
-{CONF_PROLOGUE}
-enc_token_nonce = {repr(new_cipher.nonce)}
+    print(CONF_PROLOGUE, file=sys.stderr)
+    print(
+        f"""enc_token_nonce = {repr(new_cipher.nonce)}
 enc_token = (
     {line.join(limit_str_repr(new_enc_token, 79 - 4))}
-)
-""", file=sys.stderr)
+)"""
+    )
