@@ -103,41 +103,40 @@ class InvestClient(requests.Session):
     def list_operations(self, date_from, date_to, group=False):
         operations = self.operations(date_from, date_to)
 
-        last_usd_sell = None
+        last_base_sell = None
 
         for op in reversed(operations):
+            optype = op["operationType"]
+
             if op['status'] == "Decline":
                 continue
 
-            if op["operationType"] in ("PayIn", "PayOut"):
+            if optype in ("PayIn", "PayOut"):
                 continue
 
             ticker, name, date, quantity, summ, currency = (
-                '', op["operationType"], op['date'].split('T')[0],
+                '', optype, op['date'].split('T')[0],
                 0, op['payment'], op['currency'])
-
-            if name in ("Buy", "BuyCard", "Sell"):
+            if 'figi' in op:
                 figi = self.search_by_figi(op['figi'])
-                quantity = op['quantity'] * (-1 if name == 'Sell' else 1)
                 ticker = figi['ticker']
+
+            if optype in ("Buy", "BuyCard", "Sell"):
+                if (ticker, optype) == ("USD", "Sell"):
+                    last_base_sell = op
                 name = figi['name']
-
-                if (op["operationType"], figi['ticker']) == ("Sell", "USD"):
-                    last_usd_sell = op
+                quantity = op['quantity'] * (-1 if optype == 'Sell' else 1)
             
-            elif name in ("BrokerCommission",):
-                figi = self.search_by_figi(op['figi'])
-                ticker = figi['ticker']            
+            elif optype in ("BrokerCommission",):
+                pass
 
-            elif name in ("Dividend", "TaxDividend", "Coupon"):
-                figi = self.search_by_figi(op['figi'])
-                ticker = figi['ticker']
-                name = figi['name'] + f" ({op['operationType']})"
+            elif optype in ("Dividend", "TaxDividend", "Coupon"):
+                name = figi['name'] + f" ({optype})"
 
-            elif op["operationType"] in ("Tax", "TaxBack"):
+            elif optype in ("Tax", "TaxBack"):
                 ticker = "$TAX"
 
-            elif op['operationType'] in ("ServiceCommission",):
+            elif optype in ("ServiceCommission",):
                 ticker = "$COM"
 
             else:  # unknown
@@ -147,10 +146,10 @@ class InvestClient(requests.Session):
 
             summ_base = summ
             if currency == 'RUB':
-                if last_usd_sell is None:
-                    last_usd_sell = self.search_last_op(
+                if last_base_sell is None:
+                    last_base_sell = self.search_last_op(
                         date_from, figi=self.known_figis["USD"])
-                summ_base = round(summ / last_usd_sell['price'], 2)
+                summ_base = round(summ / last_base_sell['price'], 2)
 
             yield (ticker, name, date, quantity, summ, currency, summ_base)
 
