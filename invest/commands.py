@@ -2,7 +2,7 @@ import sys
 from getpass import getpass
 
 from .conf import CONF_PROLOGUE, default_tickers, enc_token
-from .client import InvestClient
+from .client import InvestClient, group_operations
 from .crypto import (decode_token, output_conf, prompt_cipher,
                      prompt_new_password)
 
@@ -38,7 +38,20 @@ def operations_log(date_from, date_to, group):
     if callable(date_to):
         date_to = date_to()
     client = _get_client()
-    client.list_operations(date_from, date_to, group=group)
+    
+    operations = client.list_operations(date_from, date_to)
+    if group:
+        operations = group_operations(operations)
+
+    print("\t".join(["Ticker", "Name", "Date", "Quantity", "Sum",
+                     "Currency", "Sum (USD)"]))
+    for (ticker, name, date, quantity, summ, currency, summ_base) in operations:
+        if not quantity:
+            quantity = ''
+        print("\t".join([
+            ticker, name, date, str(quantity),
+            f"{summ:0.2f}", currency, f"{summ_base:0.2f}"
+        ]))
 
 
 def current_rates(tickers):

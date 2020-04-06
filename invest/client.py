@@ -104,10 +104,6 @@ class InvestClient(requests.Session):
         operations = self.operations(date_from, date_to)
 
         last_usd_sell = None
-        groups = {}
-
-        print("\t".join(["Ticker", "Name", "Date", "Quantity", "Sum",
-                         "Currency", "Sum (USD)"]))
 
         for op in reversed(operations):
             if op['status'] == "Decline":
@@ -145,40 +141,18 @@ class InvestClient(requests.Session):
                 ticker = "$COM"
 
             else:  # unknown
-                print(json.dumps(op, indent=2))
+                print("Unknown operation type:", file=sys.stderr)
+                print(json.dumps(op, indent=2), file=sys.stderr)
                 continue
 
-            summ_usd = summ
+            summ_base = summ
             if currency == 'RUB':
                 if last_usd_sell is None:
                     last_usd_sell = self.search_last_op(
                         date_from, figi=self.known_figis["USD"])
-                summ_usd = round(summ / last_usd_sell['price'], 2)
+                summ_base = round(summ / last_usd_sell['price'], 2)
 
-            if group:
-                params = groups.setdefault((ticker, name, currency),
-                                           [date, 0, 0, 0])
-                params[1] += quantity
-                params[2] += summ
-                params[3] += summ_usd
-            else:
-                self._echo_line(ticker, name, date, quantity, summ,
-                                currency, summ_usd)
-        
-        if group:
-            for ((ticker, name, currency),
-                 (date, quantity, summ, summ_usd)) in groups.items():
-                self._echo_line(ticker, name, date, quantity, summ,
-                                currency, summ_usd)
-
-    @staticmethod
-    def _echo_line(ticker, name, date, quantity, summ, currency, summ_usd):
-        if not quantity:
-            quantity = ''
-        print("\t".join([
-            ticker, name, date, str(quantity),
-            f"{summ:0.2f}", currency, f"{summ_usd:0.2f}"
-        ]))
+            yield (ticker, name, date, quantity, summ, currency, summ_base)
 
     def tickers_rates(self, tickers, date_to=None):
         if date_to is None:
@@ -208,3 +182,17 @@ class InvestClient(requests.Session):
                 ticker, pos['name'], str(int(pos['balance'])),
                 f"{price:0.2f}", pos['expectedYield']['currency']
             ]))
+
+
+def group_operations(operations):
+    groups = {}
+    for (ticker, name, date, quantity, summ, currency, summ_base) in operations:
+        params = groups.setdefault((ticker, name, currency),
+                                   [date, 0, 0, 0])
+        params[1] += quantity
+        params[2] += summ
+        params[3] += summ_base
+
+    for ((ticker, name, currency),
+         (date, quantity, summ, summ_base)) in groups.items():
+        yield (ticker, name, date, quantity, summ, currency, summ_base)
