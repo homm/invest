@@ -30,8 +30,15 @@ class InvestClient(requests.Session):
         kwargs.setdefault('timeout', self.default_timeout)
         return super().request(method, url, *args, **kwargs)
 
+    def get(self, url, *args, **kwargs):
+        resp = super().get(url, *args, **kwargs)
+        if resp.status_code != 200:
+            print(resp.status_code, resp.text, file=sys.stderr)
+            raise ValueError(f"Can't get {url}")
+        return resp.json()['payload']
+
     def operations(self, date_from, date_to=None, figi=None):
-        res = self.get(
+        resp = self.get(
             "operations",
             params={
                 "figi": figi,
@@ -39,41 +46,31 @@ class InvestClient(requests.Session):
                 "to": date_to.strftime('%Y-%m-%d') + "T09:00:00+03:00",
             },
         )
-        if res.status_code != 200:
-            print(res.status_code, res.text, file=sys.stderr)
-            raise ValueError("Can't get operations list")
-
-        return res.json()['payload']['operations']
+        return resp['operations']
 
     def search_by_figi(self, figi):
         if figi not in self._figi_cache:
-            val = self.get(
-                "market/search/by-figi", params={"figi": figi}
-            ).json()['payload']
-            if val['ticker'] in self.known_tickers:
-                val['ticker'] = self.known_tickers[val['ticker']]
-            self._figi_cache[figi] = val
+            resp = self.get("market/search/by-figi", params={"figi": figi})
+            if resp['ticker'] in self.known_tickers:
+                resp['ticker'] = self.known_tickers[resp['ticker']]
+            self._figi_cache[figi] = resp
         return self._figi_cache[figi]
 
     def search_by_ticker(self, ticker):
         if ticker not in self._ticker_cache:
-            res = self.get('market/search/by-ticker', params={'ticker': ticker})
-            if res.status_code != 200:
-                print(res.status_code, res.text, file=sys.stderr)
+            resp = self.get('market/search/by-ticker', params={'ticker': ticker})
+            if resp['total'] == 0:
                 raise ValueError("Can't get info for the ticker " + ticker)
-            payload = res.json()['payload']
-            if payload['total'] == 0:
-                raise ValueError("Can't get info for the ticker " + ticker)
-            if payload['total'] > 1:
-                print(payload['instruments'], file=sys.stderr)
+            if resp['total'] > 1:
+                print(resp['instruments'], file=sys.stderr)
                 raise ValueError(
                     "Multiple instruments returned for the ticker " + ticker)
-            self._ticker_cache[ticker] = payload['instruments'][0]
+            self._ticker_cache[ticker] = resp['instruments'][0]
         return self._ticker_cache[ticker]
 
     def search_price_on_date(self, figi, date_to, interval='day'):
         date_from = date_to - timedelta(days=10)
-        res = self.get(
+        resp = self.get(
             'market/candles',
             params={
                 'figi': figi,
@@ -82,14 +79,10 @@ class InvestClient(requests.Session):
                 "to": date_to.strftime('%Y-%m-%d') + "T23:59:59+03:00",
             },
         )
-        if res.status_code != 200:
-            print(res.status_code, res.text, file=sys.stderr)
-            raise ValueError("Can't find last price for figi " + figi)
-        candles = res.json()['payload']['candles']
-        for candle in candles:
+        for candle in resp['candles']:
             candle.pop('interval', None)
             candle.pop('figi', None)
-        return candles[-1]
+        return resp['candles'][-1]
 
     def search_last_op(self, date_to, days_back=60, op_type='Sell', figi=None):
         date_from = date_to - timedelta(days=days_back)
@@ -166,14 +159,10 @@ class InvestClient(requests.Session):
             ]))
 
     def portfolio(self):
-        res = self.get('portfolio')
-        if res.status_code != 200:
-            print(res.status_code, res.text, file=sys.stderr)
-            raise ValueError("Can't get portfolio")
-        positions = res.json()['payload']['positions']
+        resp = self.get('portfolio')
         
         print("\t".join(["Ticker", "Name", "Quantity", "Price", "Currency"]))
-        for pos in positions:
+        for pos in resp['positions']:
             ticker = self.known_tickers.get(pos['ticker'], pos['ticker'])
             price = pos['averagePositionPrice']['value']
             price += pos['expectedYield']['value'] / pos['balance']
