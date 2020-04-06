@@ -9,17 +9,16 @@ from invest.conf import enc_token
 
 
 def get_parser():
-    from_to_parser = FromToDateParser(default_to=FromToDateParser.next_day())
-
     parser = argparse.ArgumentParser()
     subparsers = parser.add_subparsers(dest="command", required=True)
     
     subparser = subparsers.add_parser('log')
     subparser.set_defaults(command=commands.operations_log)
-    subparser.add_argument('--from', type=from_to_parser.parse_date,
+    date_parser = FromToDateParser(default_to=FromToDateParser.next_day())
+    subparser.add_argument('--from', type=date_parser.parse_date,
                            dest='date_from', required=True)
-    subparser.add_argument('--to', type=from_to_parser.parse_date, dest='date_to',
-                           default=from_to_parser.get_default_to)
+    subparser.add_argument('--to', type=date_parser.parse_date,
+                           dest='date_to', default=date_parser.get_default_to)
     subparser.add_argument('--group', action='store_true')
 
     subparser = subparsers.add_parser('rates')
