@@ -15,11 +15,29 @@ def get_parser():
     subparser = subparsers.add_parser('log')
     subparser.set_defaults(command=commands.operations_log)
     date_parser = FromToDateParser(default_to=FromToDateParser.next_day())
-    subparser.add_argument('--from', type=date_parser.parse_date,
-                           dest='date_from', required=True)
-    subparser.add_argument('--to', type=date_parser.parse_date,
-                           dest='date_to', default=date_parser.get_default_to)
-    subparser.add_argument('--group', action='store_true')
+    subparser.add_argument(
+        '--from', type=date_parser.parse_date, dest='date_from', required=True,
+        help='The start date for the log. Required. Should be in 1999-12-31 '
+             'format. Day or month could be omitted. In this case `--from` '
+             'also sets the default value for `--to` argument. For example, '
+             '`--from 2020-02-01 --to 2020-03-01` could be replaced '
+             'with just `--from 2020-02`.',
+    )
+    subparser.add_argument(
+        '--to', type=date_parser.parse_date, dest='date_to',
+        default=date_parser.get_default_to,
+        help='The finish date for the log, not including. Should be in '
+             '1999-12-31 format. Default is one day in the future '
+             '(show records until now). Day or month could be omitted. '
+             '`--from 2020-04 --to 2020-06` means "show all records for '
+             'April and May".',
+    )
+    subparser.add_argument(
+        '--group', action='store_true',
+        help='Groups records with the same Ticker, Name, and Currency. '
+             'This can significantly reduce number of the records. '
+             'Quantity and Sum columns will be summed up.',
+    )
 
     subparser = subparsers.add_parser('rates')
     subparser.set_defaults(command=commands.current_rates)

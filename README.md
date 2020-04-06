@@ -199,14 +199,24 @@ USD	Доллар США	84	76.49	RUB
 
 ### Вывести историю операций
 
-```sh
+```
 $ ./run.py log -h
 usage: run.py log [-h] --from DATE_FROM [--to DATE_TO] [--group]
 
 optional arguments:
-  --from DATE_FROM
-  --to DATE_TO
-  --group
+  --from DATE_FROM  The start date for the log. Required. Should be in
+                    1999-12-31 format. Day or month could be omitted. In this
+                    case `--from` also sets the default value for `--to`
+                    argument. For example, `--from 2020-02-01 --to 2020-03-01`
+                    could be replaced with just `--from 2020-02`.
+  --to DATE_TO      The finish date for the log, not including. Should be in
+                    1999-12-31 format. Default is one day in the future (show
+                    records until now). Day or month could be omitted. `--from
+                    2020-04 --to 2020-06` means "show all records for April
+                    and May".
+  --group           Groups records with the same Ticker, Name, and Currency.
+                    This can significantly reduce number of the records.
+                    Quantity and Sum columns will be summed up.
 ```
 
 Выводит историю операций в виде таблицы с символами табуляции
