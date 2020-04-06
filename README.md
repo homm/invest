@@ -316,7 +316,7 @@ NLMK	НЛМК	2020-03-16	40	-4340.80	RUB
 то в рублях в разное время суток.
 
 Поэтому было принято решение выгружать текущую стоимость бумаг у брокера
-(команда portfolio).
+(команда `portfolio`).
 
 <img alt="portfolio table" src="./static/portfolio-table.png" width="666"/>
 

@@ -35,6 +35,8 @@ def _get_client():
 
 
 def operations_log(date_from, date_to, group):
+    if callable(date_to):
+        date_to = date_to()
     client = _get_client()
     client.list_operations(date_from, date_to, group=group)
 
