@@ -38,7 +38,7 @@ def operations_log(date_from, date_to, group):
     if callable(date_to):
         date_to = date_to()
     client = _get_client()
-    
+
     operations = client.list_operations(date_from, date_to)
     if group:
         operations = group_operations(operations)
@@ -52,6 +52,12 @@ def operations_log(date_from, date_to, group):
             ticker, name, date, str(quantity),
             f"{summ:0.2f}", currency, f"{summ_base:0.2f}"
         ]))
+
+
+def accounts():
+    client = _get_client()
+    for account in client.get('user/accounts')['accounts']:
+        print(f"{account['brokerAccountType']}: {account['brokerAccountId']}")
 
 
 def current_rates(tickers):

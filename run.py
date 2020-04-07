@@ -46,6 +46,9 @@ def get_parser():
     subparser = subparsers.add_parser('portfolio')
     subparser.set_defaults(command=commands.portfolio)
 
+    subparser = subparsers.add_parser('accounts')
+    subparser.set_defaults(command=commands.accounts)
+
     subparser = subparsers.add_parser('set_token')
     subparser.set_defaults(command=commands.set_token)
 
