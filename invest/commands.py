@@ -34,12 +34,13 @@ def _get_client():
     return InvestClient(decode_token(cipher, enc_token))
 
 
-def operations_log(date_from, date_to, group):
+def operations_log(date_from, date_to, group, account):
     if callable(date_to):
         date_to = date_to()
     client = _get_client()
 
-    operations = client.list_operations(date_from, date_to)
+    account = client.search_account_id(account)
+    operations = client.list_operations(date_from, date_to, account=account)
     if group:
         operations = group_operations(operations)
 
@@ -78,6 +79,8 @@ default_tickers = "{' '.join(tickers)}"
     client.tickers_rates(tickers)
 
 
-def portfolio():
+def portfolio(account):
     client = _get_client()
-    client.portfolio()
+    
+    account = client.search_account_id(account)
+    client.portfolio(account)

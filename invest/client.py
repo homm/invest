@@ -37,13 +37,27 @@ class InvestClient(requests.Session):
             raise ValueError(f"Can't get {url}")
         return resp.json()['payload']
 
-    def operations(self, date_from, date_to=None, figi=None):
+    def search_account_id(self, needle):
+        if not needle:
+            return
+        if needle.isdigit():
+            return needle
+        needle = needle.lower()
+        if needle == 'iis':
+            needle = 'tinkoff' + needle
+        for account in self.get('user/accounts')['accounts']:
+            if account['brokerAccountType'].lower() == needle:
+                return account['brokerAccountId']
+        raise ValueError(f'Account {needle} is not found.')
+
+    def operations(self, date_from, date_to=None, figi=None, account=None):
         resp = self.get(
             "operations",
             params={
                 "figi": figi,
                 "from": date_from.strftime('%Y-%m-%d') + "T09:00:00+03:00",
                 "to": date_to.strftime('%Y-%m-%d') + "T09:00:00+03:00",
+                "brokerAccountId": account,
             },
         )
         return resp['operations']
@@ -84,17 +98,19 @@ class InvestClient(requests.Session):
             candle.pop('figi', None)
         return resp['candles'][-1]
 
-    def search_last_op(self, date_to, days_back=60, op_type='Sell', figi=None):
+    def search_last_op(self, date_to, days_back=60, op_type='Sell',
+                       figi=None, account=None):
         date_from = date_to - timedelta(days=days_back)
         if not isinstance(op_type, (list, tuple)):
             op_type = (op_type,)
-        operations = self.operations(date_from, date_to, figi=figi)
+        operations = self.operations(date_from, date_to,
+                                     figi=figi, account=account)
         for op in operations:
             if op["operationType"] in op_type:
                 return op
 
-    def list_operations(self, date_from, date_to, group=False):
-        operations = self.operations(date_from, date_to)
+    def list_operations(self, date_from, date_to, group=False, account=None):
+        operations = self.operations(date_from, date_to, account=account)
 
         last_base_sell = None
 
@@ -141,7 +157,8 @@ class InvestClient(requests.Session):
             if currency == 'RUB':
                 if last_base_sell is None:
                     last_base_sell = self.search_last_op(
-                        date_from, figi=self.known_figis["USD"])
+                        date_from, figi=self.known_figis["USD"],
+                        account=account)
                 summ_base = round(summ / last_base_sell['price'], 2)
 
             yield (ticker, name, date, quantity, summ, currency, summ_base)
@@ -158,8 +175,8 @@ class InvestClient(requests.Session):
                 f"{price['c']:0.2f}", figi['currency']
             ]))
 
-    def portfolio(self):
-        resp = self.get('portfolio')
+    def portfolio(self, account=None):
+        resp = self.get('portfolio', params={'brokerAccountId': account})
         
         print("\t".join(["Ticker", "Name", "Quantity", "Price", "Currency"]))
         for pos in resp['positions']:

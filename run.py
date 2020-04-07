@@ -38,6 +38,7 @@ def get_parser():
              'This can significantly reduce number of the records. '
              'Quantity and Sum columns will be summed up.',
     )
+    subparser.add_argument('--account')
 
     subparser = subparsers.add_parser('rates')
     subparser.set_defaults(command=commands.current_rates)
@@ -45,6 +46,7 @@ def get_parser():
 
     subparser = subparsers.add_parser('portfolio')
     subparser.set_defaults(command=commands.portfolio)
+    subparser.add_argument('--account')
 
     subparser = subparsers.add_parser('accounts')
     subparser.set_defaults(command=commands.accounts)
