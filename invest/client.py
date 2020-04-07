@@ -23,7 +23,6 @@ class InvestClient(requests.Session):
             "Authorization": "Bearer " + token,
         })
         self._figi_cache = {}
-        self._ticker_cache = {}
 
     def request(self, method, url, *args, **kwargs):
         url = urljoin(self.api_base or '', url)
@@ -69,34 +68,6 @@ class InvestClient(requests.Session):
                 resp['ticker'] = self.known_tickers[resp['ticker']]
             self._figi_cache[figi] = resp
         return self._figi_cache[figi]
-
-    def search_by_ticker(self, ticker):
-        if ticker not in self._ticker_cache:
-            resp = self.get('market/search/by-ticker', params={'ticker': ticker})
-            if resp['total'] == 0:
-                raise ValueError("Can't get info for the ticker " + ticker)
-            if resp['total'] > 1:
-                print(resp['instruments'], file=sys.stderr)
-                raise ValueError(
-                    "Multiple instruments returned for the ticker " + ticker)
-            self._ticker_cache[ticker] = resp['instruments'][0]
-        return self._ticker_cache[ticker]
-
-    def search_price_on_date(self, figi, date_to, interval='day'):
-        date_from = date_to - timedelta(days=10)
-        resp = self.get(
-            'market/candles',
-            params={
-                'figi': figi,
-                'interval': interval,
-                "from": date_from.strftime('%Y-%m-%d') + "T00:00:00+03:00",
-                "to": date_to.strftime('%Y-%m-%d') + "T23:59:59+03:00",
-            },
-        )
-        for candle in resp['candles']:
-            candle.pop('interval', None)
-            candle.pop('figi', None)
-        return resp['candles'][-1]
 
     def search_last_op(self, date_to, days_back=60, op_type='Sell',
                        figi=None, account=None):
@@ -162,18 +133,6 @@ class InvestClient(requests.Session):
                 summ_base = round(summ / last_base_sell['price'], 2)
 
             yield (ticker, name, date, quantity, summ, currency, summ_base)
-
-    def tickers_rates(self, tickers, date_to=None):
-        if date_to is None:
-            date_to = (datetime.now() + timedelta(days=1)).date()
-        print("\t".join(["Ticker", "Name", "Date", "Sum", "Currency"]))
-        for ticker in tickers:
-            figi = self.search_by_ticker(ticker)
-            price = self.search_price_on_date(figi['figi'], date_to)
-            print("\t".join([
-                figi['ticker'], figi['name'], price['time'].split('T')[0],
-                f"{price['c']:0.2f}", figi['currency']
-            ]))
 
     def portfolio(self, account=None):
         resp = self.get('portfolio', params={'brokerAccountId': account})

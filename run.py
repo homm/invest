@@ -40,10 +40,6 @@ def get_parser():
     )
     subparser.add_argument('--account')
 
-    subparser = subparsers.add_parser('rates')
-    subparser.set_defaults(command=commands.current_rates)
-    subparser.add_argument('tickers', nargs='*')
-
     subparser = subparsers.add_parser('portfolio')
     subparser.set_defaults(command=commands.portfolio)
     subparser.add_argument('--account')

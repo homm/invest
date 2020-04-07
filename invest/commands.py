@@ -1,7 +1,7 @@
 import sys
 from getpass import getpass
 
-from .conf import CONF_PROLOGUE, default_tickers, enc_token
+from .conf import CONF_PROLOGUE, enc_token
 from .client import InvestClient, group_operations
 from .crypto import (decode_token, output_conf, prompt_cipher,
                      prompt_new_password)
@@ -61,26 +61,8 @@ def accounts():
         print(f"{account['brokerAccountType']}: {account['brokerAccountId']}")
 
 
-def current_rates(tickers):
-    if not tickers:
-        if not default_tickers:
-            sys.exit(f'usage: {sys.argv[0]} rates [tickers [tickers ...]]')
-        tickers = default_tickers 
-    else:
-        print(
-            f"""
-{CONF_PROLOGUE}
-default_tickers = "{' '.join(tickers)}"
-""",
-            file=sys.stderr
-        )
-
-    client = _get_client()
-    client.tickers_rates(tickers)
-
-
 def portfolio(account):
     client = _get_client()
-    
+
     account = client.search_account_id(account)
     client.portfolio(account)
