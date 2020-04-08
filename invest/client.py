@@ -148,6 +148,14 @@ class InvestClient(requests.Session):
                 f"{price:0.2f}", pos['expectedYield']['currency']
             ]))
 
+        resp = self.get('portfolio/currencies')
+        for cur in resp['currencies']:
+            if cur['currency'] == 'RUB':
+                print("\t".join([
+                    'RUB', 'Российский рубль', str(int(cur['balance'])),
+                    f"1", 'RUB'
+                ]))
+
 
 def group_operations(operations):
     groups = {}
