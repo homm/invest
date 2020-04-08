@@ -105,7 +105,8 @@ class InvestClient(requests.Session):
                 if (ticker, optype) == ("USD", "Sell"):
                     last_base_sell = op
                 name = figi['name']
-                quantity = op['quantity'] * (-1 if optype == 'Sell' else 1)
+                quantity = sum(trade['quantity'] for trade in op['trades'])
+                quantity *= (-1 if optype == 'Sell' else 1)
             
             elif optype in ("BrokerCommission",):
                 pass
