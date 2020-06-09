@@ -105,7 +105,10 @@ class InvestClient(requests.Session):
                 if (ticker, optype) == ("USD", "Sell"):
                     last_base_sell = op
                 name = figi['name']
-                quantity = sum(trade['quantity'] for trade in op['trades'])
+                if 'trades' in op:
+                    quantity = sum(trade['quantity'] for trade in op['trades'])
+                else:
+                    quantity = op['quantity']
                 quantity *= (-1 if optype == 'Sell' else 1)
             
             elif optype in ("BrokerCommission",):
@@ -141,11 +144,16 @@ class InvestClient(requests.Session):
         print("\t".join(["Ticker", "Name", "Quantity", "Price", "Currency"]))
         for pos in resp['positions']:
             ticker = self.known_tickers.get(pos['ticker'], pos['ticker'])
-            price = pos['averagePositionPrice']['value']
-            price += pos['expectedYield']['value'] / pos['balance']
+            if 'averagePositionPrice' in pos:
+                price = pos['averagePositionPrice']['value']
+                price += pos['expectedYield']['value'] / pos['balance']
+                curr = pos['expectedYield']['currency']
+            else:
+                price = 0
+                curr = ''
             print("\t".join([
                 ticker, pos['name'], str(int(pos['balance'])),
-                f"{price:0.2f}", pos['expectedYield']['currency']
+                f"{price:0.3f}", curr
             ]))
 
         resp = self.get('portfolio/currencies')
