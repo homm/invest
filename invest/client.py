@@ -6,6 +6,13 @@ from urllib.parse import urljoin
 import requests
 
 
+def fixed_float(number, digits=4):
+    fixed_repr = number.__format__('.{}g'.format(digits))
+    if 'e+' in fixed_repr:
+        fixed_repr = number.__format__('.0f')
+    return fixed_repr
+
+
 class InvestClient(requests.Session):
     api_base = "https://api-invest.tinkoff.ru/openapi/"
     known_tickers = {
@@ -153,7 +160,7 @@ class InvestClient(requests.Session):
                 curr = ''
             print("\t".join([
                 ticker, pos['name'], str(int(pos['balance'])),
-                f"{price:0.3f}", curr
+                fixed_float(price, 5), curr
             ]))
 
         resp = self.get('portfolio/currencies')
