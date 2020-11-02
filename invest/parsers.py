@@ -15,13 +15,13 @@ class FromToDateParser:
         parts = date.split('-')
         if len(parts) == 1:
             date += '-01-01'
-            year = int(parts[0]) + 1
-            self.default_to = create_date(year, 1, 1)
+            year = int(parts[0])
+            self.default_to = create_date(year + 1, 1, 1)
         elif len(parts) == 2:
             date += '-01'
             year = int(parts[0])
-            month = int(parts[1]) + 1
-            self.default_to = create_date(year + month // 12 , month % 12, 1)
+            month = int(parts[1])
+            self.default_to = create_date(year + month // 12, month % 12 + 1, 1)
         return datetime.strptime(date, "%Y-%m-%d").date()
 
     def get_default_to(self):
