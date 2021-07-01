@@ -61,8 +61,8 @@ class InvestClient(requests.Session):
             "operations",
             params={
                 "figi": figi,
-                "from": date_from.strftime('%Y-%m-%d') + "T09:00:00+03:00",
-                "to": date_to.strftime('%Y-%m-%d') + "T09:00:00+03:00",
+                "from": date_from.strftime('%Y-%m-%d') + "T03:00:00+03:00",
+                "to": date_to.strftime('%Y-%m-%d') + "T03:00:00+03:00",
                 "brokerAccountId": account,
             },
         )
