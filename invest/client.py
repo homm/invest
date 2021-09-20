@@ -121,7 +121,7 @@ class InvestClient(requests.Session):
             elif optype in ("BrokerCommission",):
                 pass
 
-            elif optype in ("Dividend", "TaxDividend", "Coupon", "TaxCoupon"):
+            elif optype in ("Dividend", "TaxDividend", "Coupon", "TaxCoupon", "PartRepayment"):
                 name = figi['name'] + f" ({optype})"
 
             elif optype in ("Tax", "TaxBack"):
